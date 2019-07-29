@@ -43,6 +43,12 @@ app.listen(8000, () => {
  */
 app.route('/user/register').post((req, res) => {
     const newUser = req.body['user'];
+    
+    if(!newUser['first_name'] || !newUser['uid'] || !newUser['password']) {
+      return res.status(400).send({
+        message: 'First Name, Username, and Password are required'
+      });
+    }
 
     //Handle cases where user data isn't as expected just to be safe 
 
@@ -90,8 +96,14 @@ app.route('/user/register').post((req, res) => {
  */
 app.route('/user/authenticate').post((req, res) => {
 
-    const username = req.body.username;
-    const password = req.body.password;
+    const username = req.body.username || '';
+    const password = req.body.password || '';
+
+    if(!username || !password) {
+      return res.status(400).send({
+        message: 'Username and Password are required'
+      });
+    }
 
     dbh.collection("users").findOne({uid:username}, { projection: { _id: 0 } }, function(err, findRes) {
         if (err) {
@@ -144,6 +156,13 @@ app.route('/user/authenticate').post((req, res) => {
 app.route('/activity/:date/for/:user').get((req, res) => {
     const date = req.params['date'];
     const username = req.params['user'];
+
+    if(!username || !date) {
+      return res.status(400).send({
+        message: 'Username and Date are required'
+      });
+    }
+
     dbh.collection("activity").find({date:date, username:username}).toArray(function(err, findRes) {
       if (err) {
         return res.status(500).send({
@@ -172,6 +191,14 @@ app.route('/activity/:date/for/:user').get((req, res) => {
  */
 app.route('/activity/:user').get((req, res) => {
     const username = req.params['user'];
+
+    if(!username) {
+      return res.status(400).send({
+        message: 'Username is required'
+      });
+    }
+
+
     dbh.collection("activity").find({username:username}).toArray(function(err, findRes) {
       if (err) {
         return res.status(500).send({
@@ -202,7 +229,12 @@ app.route('/activity/:user').get((req, res) => {
  */
 app.route('/activity/').post((req, res) => {
     const newActivity = req.body['activity'];
-    ////////////////////////////////////////////handle input problems
+    
+    if(!newActivity) {
+      return res.status(400).send({
+        message: 'An activity is required to create'
+      });
+    }
   
     dbh.collection("activity").insertOne(newActivity, function(err, insertRes) {
       if (err){
@@ -232,8 +264,13 @@ app.route('/activity/').post((req, res) => {
    * @returns {error: Object} - HTTP Error object with reason for failure
    */
   app.route('/activity/').put((req, res) => {
-    //////////////////////handle input problems
     const requestBody = req.body['activity'];
+    if(!requestBody || !requestBody['_id']) {
+      return res.status(400).send({
+        message: 'An activity is required to update'
+      });
+    }
+
     const activityQuery = {_id: ObjectId(requestBody['_id'])};
     delete requestBody['_id'];
     const updateQuery = { $set: requestBody}; 
@@ -265,7 +302,6 @@ app.route('/activity/').post((req, res) => {
    * @returns {error: Object} - HTTP Error object with reason for failure
    */
   app.route('/activity/:id/').delete((req, res) => {
-    ////////////////handle input problems
     const id = ObjectId(req.params['id']);
     const updateQuery = {_id: id};
     dbh.collection("activity").deleteOne(updateQuery, function(err, deleteRes) {
